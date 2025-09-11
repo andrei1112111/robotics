@@ -1,0 +1,249 @@
+# создаем рабочую директорию
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws
+
+
+# ==> Ex01 — Настройка ROS2 среды <==
+source /opt/miniconda3/envs/ros2/setup.sh # ROS2 Humble (conda)
+source /Users/andrejtiskin/ros2_ws/install/local_setup.sh # Рабочее пространство
+
+~/.zshrc  #типо перезагрузка терминала чтобы применить все изменения
+
+# Смотрим переменные окружения и сохраняем в файл
+printenv | grep ROS
+printenv | grep ROS > ex01.txt
+
+
+# ==> Ex02 — Навигация по пакетам <==
+# путь к пакету ROS ros2topic
+ros2 pkg prefix ros2topic
+ros2 pkg prefix ros2topic > ~/ros2_ws/install/package_path_ros2topic.txt
+
+# список выполняемых файлов в каталоге пакета «action_tutorials_py»
+# ros2 pkg prefix action_tutorials_py -> /opt/miniconda3/envs/ros2
+ls $(ros2 pkg prefix action_tutorials_py)/share/action_tutorials_py > ~/ros2_ws/ex02/list_exec_action_tutorials.txt
+
+
+# ==> Ex03 — Создание пакета ROS <==
+cd ~/ros2_ws/src
+# пакет с питоном название login_andrey и зависимости
+ros2 pkg create --build-type ament_python andrey --dependencies rclpy rclcpp std_msgs
+# меняем maintainer email на свой адрес электронной почты в файле package.xml 
+nano andrey/package.xml # -> <maintainer email="a.tishkin1@g.nsu.ru">andrejtiskin</maintainer>
+
+
+# ==> Ex04 — Сборка пакета <==
+colcon build --packages-select andrey > ~/ros2_ws/colcon_build_ex04.txt 2>&1 # 2>&1 записываем sterr в тот же файл
+
+
+# ==> Ex05 — Понимание узлов <==
+ros2 run turtlesim turtlesim_node --ros-args -r __node:=andrey_turtle &
+
+ros2 node list > ~/ros2_ws/rosnode_list.txt
+ros2 node info /andrey_turtle > ~/ros2_ws/rosnode_info.txt
+
+
+# ==> Ex06 — Понимание топиков <==
+ros2 run turtlesim turtlesim_node
+
+ros2 topic echo /turtle1/cmd_vel > ~/ros2_ws/cmd_vel.txt # сохраняем поток вывода
+
+# рисуем восьмерку
+# Верхний кружок
+ros2 topic pub /turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0}, angular: {z: 1.5}}" -r 10
+# Нижний кружок
+ros2 topic pub /turtle1/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 2.0}, angular: {z: -1.5}}" -r 10
+
+
+# ==> Ex07 — Службы и параметры <==
+ros2 run turtlesim turtlesim_node
+
+# спавним 4 черепах
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 2.0, y: 2.0, theta: 0.0, name: 'Leonardo'}"
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 4.0, y: 4.0, theta: 0.0, name: 'Raphael'}"
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 6.0, y: 6.0, theta: 0.0, name: 'Donatello'}"
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 8.0, y: 8.0, theta: 0.0, name: 'Michelangelo'}"
+
+# меняем фон
+ros2 param set /turtlesim background_g 124
+
+#
+ros2 service list
+ros2 param list
+
+
+# ==> Ex08 — rqt_console и roslaunch <==
+mkdir -p ~/ros2_ws/ex08
+cd ~/ros2_ws/ex08
+nano three_turtles.launch
+
+ros2 launch three_turtles.launch
+ros2 run turtlesim turtle_teleop_key
+
+
+# ==> Ex09 — Создание msg и srv <==
+cd ~/ros2_ws/src
+
+# ament_python для сборки msg/srv 
+ros2 pkg create --build-type ament_python my_pkgxw --dependencies rclpy rosidl_default_runtime
+
+cd my_pkgxw
+
+# делаем тип сообщения full_name_message
+mkdir msg
+cd msg
+nano FullNameMessage.msg
+cd ..
+# -->
+string last_name
+string name
+string first_name
+# <--
+
+# делаем сервис FullNameSumService
+mkdir srv
+cd srv
+nano FullNameSumService.srv
+cd ..
+# -->             здесь часть до '---' запрос а после ответ
+string last_name
+string name
+string first_name
+---
+string full_name
+# <-- 
+
+# В package.xml добавляем msg и srv
+nano package.xml
+# --> 
+<buildtool_depend>ament_python</buildtool_depend>
+<exec_depend>rclpy</exec_depend>
+<exec_depend>rosidl_default_runtime</exec_depend>
+<member_of_group>rosidl_interface_packages</member_of_group>
+<buildtool_depend>ament_cmake</buildtool_depend>
+# <--
+
+# чекаем setup.py в setup(): -->
+data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/msg', ['msg/FullNameMessage.msg']),
+        ('share/' + package_name + '/srv', ['srv/FullNameSumService.srv']),
+    ],
+# <--
+
+# nano CMakeLists.txt
+# -->
+cmake_minimum_required(VERSION 3.5)
+project(my_pkgxw)
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/FullNameMessage.msg"
+  "srv/FullNameSumService.srv"
+)
+
+ament_package()
+# <--
+
+# делаем пустой __init__.py в пакете
+touch my_pkgxw/__init__.py
+
+# cборка и  # очищаем старые сборки
+cd ~/ros2_ws
+rm -rf build install log
+colcon build
+source install/setup.sh
+
+#
+source install/setup.sh
+ros2 pkg list | grep my_pkgxw # видим пакет
+
+#
+colcon edit my_pkgxw/srv/FullNameSumService.srv
+
+
+# ==> Ex10 — Publisher и Subscriber <==
+# делаем пакет
+cd ~/ros2_ws/src
+ros2 pkg create --build-type ament_python text_to_cmd_vel --dependencies rclpy std_msgs geometry_msgs
+
+cd text_to_cmd_vel
+touch text_to_cmd_vel/text_to_cmd_vel_node.py
+
+# чекаем package.xml
+#-->
+<exec_depend>rclpy</exec_depend>
+<exec_depend>std_msgs</exec_depend>
+<exec_depend>geometry_msgs</exec_depend>
+#<--
+
+# чекаем setup.py
+#-->
+entry_points={
+        'console_scripts': [
+            'text_to_cmd_vel = text_to_cmd_vel.text_to_cmd_vel_node:main'
+        ],
+    },
+#<--
+
+# прогаем text_to_cmd_vel_node.py
+# -->>
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
+
+class TextToCmdVel(Node):
+    def __init__(self):
+        super().__init__('text_to_cmd_vel')
+        self.subscription = self.create_subscription(
+            String,
+            'cmd_text',
+            self.cmd_text_callback,
+            10)
+        self.publisher_ = self.create_publisher(Twist, '/turtle1/cmd_vel', 10)
+
+    def cmd_text_callback(self, msg):
+        twist = Twist()
+        if msg.data == 'move_forward':
+            twist.linear.x = 1.0
+        elif msg.data == 'move_backward':
+            twist.linear.x = -1.0
+        elif msg.data == 'turn_left':
+            twist.angular.z = 1.5
+        elif msg.data == 'turn_right':
+            twist.angular.z = -1.5
+        else:
+            self.get_logger().warn(f'Unknown command: {msg.data}')
+        self.publisher_.publish(twist)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TextToCmdVel()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+# <<--
+
+# билдим
+cd ~/ros2_ws
+rm -rf build install log
+colcon build
+source install/setup.sh
+
+ros2 pkg list | grep text_to_cmd_vel # чекаем
+
+# тестим
+ros2 run turtlesim turtlesim_node
+
+ros2 run text_to_cmd_vel text_to_cmd_vel
+
+ros2 topic pub /cmd_text std_msgs/String "data: 'move_forward'" -1
+ros2 topic pub /cmd_text std_msgs/String "data: 'turn_left'" -1
