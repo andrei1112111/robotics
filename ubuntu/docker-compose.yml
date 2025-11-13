@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ros2:
+    image: tiryoh/ros2-desktop-vnc:humble
+    container_name: ros2_humble_novnc
+    restart: unless-stopped
+    ports:
+      - "6080:80"       # noVNC веб-доступ
+      - "5900:5900"     # VNC (если нужен клиент)
+    volumes:
+      - ~/ros2_home:/home             # весь домашний каталог контейнера сохраняется
+      - ~/ros2_ws:/home/ros2/ros2_ws     # синхронизация локальной рабочей папки ROS 2
+    environment:
+      - VNC_PASSWORD=ros2
+      - RESOLUTION=1920x1080
+      - NOVNC_PORT=80
+      - USER=ros2
+      - PASSWORD=ros2
+    stdin_open: true
+    tty: true
+    command: >
+      /bin/bash -c "source /opt/ros/humble/setup.bash && bash"
+
+volumes:
+  ros2_home:
+    driver: local
+    

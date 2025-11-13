@@ -1,0 +1,6 @@
+http://localhost:6080
+
+docker-compose up -d
+
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
