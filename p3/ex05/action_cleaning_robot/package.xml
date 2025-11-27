@@ -2,23 +2,23 @@
 <package format="3">
   <name>action_cleaning_robot</name>
   <version>0.0.1</version>
-  <description>ROS2 package for cleaning turtle via Actions</description>
-  <maintainer email="you@example.com">Your Name</maintainer>
-  <license>Apache-2.0</license>
+  <description>Cleaning robot using ROS2 actions</description>
 
-  <!-- Buildtool -->
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <maintainer email="a@a.com">a</maintainer>
+  <license>Apache License 2.0</license>
+
   <buildtool_depend>ament_python</buildtool_depend>
 
-  <!-- Build dependencies -->
-  <build_depend>rclpy</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
 
-  <!-- Run dependencies -->
   <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>turtlesim</exec_depend>
+
   <exec_depend>rosidl_default_runtime</exec_depend>
 
-  <!-- Export -->
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
   <export>
     <build_type>ament_python</build_type>
   </export>

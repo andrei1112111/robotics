@@ -1,7 +1,0 @@
-# request
-string surname
-string name
-string patronymic
----
-# response
-string full_name

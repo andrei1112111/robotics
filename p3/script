@@ -1,51 +1,31 @@
-cd ~/ros2_ws
-source /opt/miniconda3/etc/profile.d/conda.sh
-source ~/.zshrc
-conda activate ros2_humble
-source install/setup.zsh
-
-
-
 # ==> Ex01 — Написание простого сервиса и клиента <==
-cd ~/ros2_ws
-rm -rf build install log
+colcon build --packages-select fullname_interfaces
+colcon build --packages-select service_full_name
 
-colcon build --symlink-install \
-  --cmake-args \
-    -DPython3_EXECUTABLE=$CONDA_PREFIX/bin/python \
-    -DPython3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.9 \
-    -DPython3_NumPy_INCLUDE_DIRS=$CONDA_PREFIX/lib/python3.9/site-packages/numpy/core/include
-
-source install/setup.zsh
-
-ros2_ws % python -m service_full_name.service_name
-python -m service_full_name.client_name Тишкин Андрей Алексеевич
-
+ros2 run service_full_name service
+ros2 run service_full_name client a b c
 
 
 # ==> Ex02 — Запись и воспроизведение данных <==
-mkdir -p ~/ros2_ws/ex02
-cd ~/ros2_ws/ex02
+cd ~/ros2_ws/src
+git clone https://github.com/ros/ros_tutorials.git
 
-# Запись команд скорости
+в файле ros_tutorials/turtlesim/src/turtle_frame.cpp поменял строку на setFixedSize(800, 800);
 
-# черепаха и клава
-ros2 run turtlesim turtlesim_node
-ros2 run turtlesim turtle_teleop_key
-
-# рекорд движений
-ros2 bag record /turtle1/cmd_vel -o turtle_cmd_vel
-
-# воспроизведение
-ros2 bag play turtle_cmd_vel.mcap
-ros2 topic echo /turtle1/pose --csv > pose_speed_x1.yaml
-
-ros2 run turtlesim turtlesim_node
+cd ~/ros2_ws
+colcon build --packages-select turtlesim_msgs
+colcon build --packages-select turtlesim
+source install/setup.bash
 
 #
-ros2 bag play turtle_cmd_vel.mcap --rate 2.0
-ros2 topic echo /turtle1/pose --csv > pose_speed_x2.yaml
+ros2 run turtlesim turtlesim_node
+ros2 run turtlesim turtle_teleop_key
+ros2 bag record -o turtle_cmd_vel --storage mcap /turtle1/cmd_vel
 
+#
+ros2 run turtlesim turtlesim_node
+ros2 topic echo /turtle1/pose > pose_speed_x1.yaml
+ros2 bag play turtle_cmd_vel.mcap
 
 
 # ==> Ex03 — Работа с инструментом ros2 doctor <==
@@ -55,22 +35,16 @@ ros2 run turtlesim turtle_teleop_key
 ros2 doctor --report > full_report.txt
 
 
-
 # ==> Ex04 — Навигация по вики ROS <==
-ros2 run turtlesim turtlesim_node
-python -m move_to_goal.move_to_goal 7.0 7.0 0.0
+colcon build --packages-select move_to_goal
 
+ros2 run turtlesim turtlesim_node
+ros2 run move_to_goal move_to_goal 7.0 5.0 0.0
 
 
 # ==> Ex05 — Написание простого сервера действий и клиента действий <==
-cd ~/ros2_ws
-rm -rf build install log
-
-colcon build --packages-select action_cleaning_robot
-source install/setup.zsh
-
-ros2 pkg list | grep action_cleaning_robot
-python -m action_cleaning_robot.cleaning_action_server 
+colcon build --packages-select action_cleaning_robot_interfaces --packages-ignore turtlesim
+colcon build --packages-select action_cleaning_robot --packages-ignore turtlesim
 
 ros2 run action_cleaning_robot cleaning_action_server
 ros2 run action_cleaning_robot cleaning_action_client

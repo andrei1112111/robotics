@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 package_name = 'service_full_name'
 
@@ -17,10 +17,11 @@ setup(
     maintainer_email='',
     description='Full Name Concat',
     license='Apache License 2.0',
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'service_name = service_full_name.service_name:main',
-            'client_name = service_full_name.client_name:main',
+            'service = service_full_name.service_name:main',
+            'client = service_full_name.client_name:main',
         ],
     },
 )

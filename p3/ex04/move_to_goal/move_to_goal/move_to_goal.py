@@ -1,71 +1,91 @@
 import rclpy
 from rclpy.node import Node
-
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
-from concurrent.futures import Future
-
+from math import atan2, sqrt, pi
 import sys
-from math import pi, sqrt, atan2
 
 
 class MoveToGoal(Node):
 
-    def __init__(self, x, y, theta):
+    def __init__(self, x_goal, y_goal, theta_goal_deg):
         super().__init__("move_to_goal")
 
-        self.cmd_vel_pub = self.create_publisher(Twist, "/turtle1/cmd_vel", 10)
-        self.pose_sub = self.create_subscription(Pose, "/turtle1/pose", self.pose_callback, 10)
-        self.current_pose = Pose()
-        self.goal_pose = Pose(x = float(x), y = float(y), theta = float(theta) * pi / 180)
+        self.goal_x = float(x_goal)
+        self.goal_y = float(y_goal)
+        self.goal_theta = float(theta_goal_deg) * pi / 180.0
 
-        self.future = Future()
-        self.timer = self.create_timer(1, self.move_to_goal)
+        self.pose = None
+        self.cmd_pub = self.create_publisher(Twist, "/turtle1/cmd_vel", 10)
+        self.create_subscription(Pose, "/turtle1/pose", self.pose_callback, 10)
 
-    def pose_callback(self, pose):
-        # Обновить позицию
-        self.current_pose = pose
+        self.timer = self.create_timer(0.1, self.loop)
 
-    def send_turtle_msg(self, x_speed, angle_speed):
-        tw = Twist()
-        tw.linear.x = float(x_speed)
-        tw.angular.z = float(angle_speed)
+        self.get_logger().info(
+            f"Goal: x={self.goal_x}, y={self.goal_y}, theta={theta_goal_deg}°")
 
-        self.cmd_vel_pub.publish(tw)
+    def normalize(self, a):
+        while a > pi:
+            a -= 2*pi
+        while a < -pi:
+            a += 2*pi
+        return a
 
-    def move_to_goal(self):
-        x_d = self.goal_pose.x - self.current_pose.x
-        y_d = self.goal_pose.y - self.current_pose.y
-        alpha = atan2(y_d, x_d)
+    def pose_callback(self, msg):
+        self.pose = msg
 
-        dst_target = sqrt(x_d**2 + y_d**2)
-        # Пройдем только часть расстояния, на деле она будет еще меньше
-        dst_target *= 0.4
-
-        angle_target = alpha - self.current_pose.theta
-
-        self.get_logger().info(f"Distance left: {dst_target:.4f}")
-
-        # Погрешность измерения расстояния
-        eps = 0.15
-        if abs(dst_target) > eps:
-            self.send_turtle_msg(dst_target, angle_target)
+    def loop(self):
+        if self.pose is None:
             return
 
-        self.timer.destroy()
+        dx = self.goal_x - self.pose.x
+        dy = self.goal_y - self.pose.y
+        distance = sqrt(dx*dx + dy*dy)
 
-        angle_target = self.goal_pose.theta - self.current_pose.theta
-        
-        self.send_turtle_msg(0.0, angle_target)
-        self.get_logger().info(f"Goal Reached")
-        self.future.set_result(None)
+        angle_to_goal = atan2(dy, dx)
+        angle_error = self.normalize(angle_to_goal - self.pose.theta)
+
+        cmd = Twist()
+
+        # rotate toward target 
+        if abs(angle_error) > 0.1 and distance > 0.3:
+            cmd.linear.x = 0.0
+            cmd.angular.z = 2.0 * angle_error
+            self.cmd_pub.publish(cmd)
+            return
+
+        # move straight to target 
+        if distance > 0.3:
+            cmd.linear.x = min(1.5 * distance, 2.0)   # strong forward
+            cmd.angular.z = 1.5 * angle_error         # minor orientation correction
+            self.cmd_pub.publish(cmd)
+            return
+
+        # final rotation 
+        theta_error = self.normalize(self.goal_theta - self.pose.theta)
+        if abs(theta_error) > 0.05:
+            cmd.linear.x = 0.0
+            cmd.angular.z = 1.5 * theta_error
+            self.cmd_pub.publish(cmd)
+            return
+
+        # 
+        cmd.linear.x = 0.0
+        cmd.angular.z = 0.0
+        self.cmd_pub.publish(cmd)
+        self.get_logger().info("GOAL REACHED")
+        rclpy.shutdown()
+
 
 def main():
     rclpy.init()
-    mvg = MoveToGoal(sys.argv[1], sys.argv[2], sys.argv[3])
-    rclpy.spin_until_future_complete(mvg, mvg.future) 
-    mvg.destroy_node()
-    rclpy.shutdown()
+    if len(sys.argv) != 4:
+        print("Usage: ros2 run move_to_goal move_to_goal x y theta_deg")
+        return
+
+    node = MoveToGoal(sys.argv[1], sys.argv[2], sys.argv[3])
+    rclpy.spin(node)
+
 
 if __name__ == "__main__":
     main()

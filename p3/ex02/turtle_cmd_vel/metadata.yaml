@@ -1,26 +1,26 @@
 rosbag2_bagfile_information:
   version: 5
-  storage_identifier: sqlite3
+  storage_identifier: mcap
   duration:
-    nanoseconds: 59461007737
+    nanoseconds: 5801007420
   starting_time:
-    nanoseconds_since_epoch: 1727793527178237304
-  message_count: 54
+    nanoseconds_since_epoch: 1764261178508376301
+  message_count: 18
   topics_with_message_count:
     - topic_metadata:
         name: /turtle1/cmd_vel
         type: geometry_msgs/msg/Twist
         serialization_format: cdr
         offered_qos_profiles: "- history: 3\n  depth: 0\n  reliability: 1\n  durability: 2\n  deadline:\n    sec: 9223372036\n    nsec: 854775807\n  lifespan:\n    sec: 9223372036\n    nsec: 854775807\n  liveliness: 1\n  liveliness_lease_duration:\n    sec: 9223372036\n    nsec: 854775807\n  avoid_ros_namespace_conventions: false"
-      message_count: 54
+      message_count: 18
   compression_format: ""
   compression_mode: ""
   relative_file_paths:
-    - turtle_cmd_vel_0.db3
+    - turtle_cmd_vel_0.mcap
   files:
-    - path: turtle_cmd_vel_0.db3
+    - path: turtle_cmd_vel_0.mcap
       starting_time:
-        nanoseconds_since_epoch: 1727793527178237304
+        nanoseconds_since_epoch: 1764261178508376301
       duration:
-        nanoseconds: 59461007737
-      message_count: 54
+        nanoseconds: 5801007420
+      message_count: 18

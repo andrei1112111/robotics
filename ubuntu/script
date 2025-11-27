@@ -2,5 +2,10 @@ http://localhost:6080
 
 docker-compose up -d
 
+export GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/ros/humble/lib
+
 source /opt/ros/humble/setup.bash
 source ~/ros2_ws/install/setup.bash
+cd ~/ros2_ws
+
+--packages-select

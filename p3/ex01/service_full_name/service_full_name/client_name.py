@@ -1,49 +1,38 @@
-#!/usr/bin/env python3
 import sys
+
+from fullname_interfaces.srv import FullNameSumService
 import rclpy
 from rclpy.node import Node
-from fullname_interfaces.srv import SummFullName
 
+class MyClient(Node):
 
-class FullNameClient(Node):
     def __init__(self):
         super().__init__('client_name')
-        self.client = self.create_client(SummFullName, 'SummFullName')
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service "SummFullName"...')
+        self.cli = self.create_client(FullNameSumService, 'summ_full_name')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        self.req = FullNameSumService.Request()
 
-    def send_request(self, surname: str, name: str, patronymic: str):
-        req = SummFullName.Request()
-        req.surname = surname
-        req.name = name
-        req.patronymic = patronymic
-        future = self.client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-        return future.result()
+    def send_request(self, last_name, first_name, third_name):
+        self.req.last_name = last_name
+        self.req.third_name = third_name
+        self.req.first_name = first_name
+        self.future = self.cli.call_async(self.req)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
 
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = FullNameClient()
-    if len(sys.argv) < 4:
-        node.get_logger().info('Usage: ros2 run service_full_name client_name <surname> <name> <patronymic>')
-        node.destroy_node()
-        rclpy.shutdown()
-        return
+def main():
+    rclpy.init()
+    
+    client = MyClient()
+    response = client.send_request(str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[3]))
+    client.get_logger().info(
+        'Result of summ_full_name: for %s + %s + %s = %s' %
+        (str(sys.argv[1]), str(sys.argv[2]), str(sys.argv[3]), response.full_name))
 
-    surname = sys.argv[1]
-    name = sys.argv[2]
-    patronymic = sys.argv[3]
-    resp = node.send_request(surname, name, patronymic)
-    if resp is not None:
-        node.get_logger().info(f"Full name received: '{resp.full_name}'")
-    else:
-        node.get_logger().error('Service call failed or returned no response')
-
-    node.destroy_node()
+    client.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
-

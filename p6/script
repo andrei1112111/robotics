@@ -1,0 +1,17 @@
+----- ex01 -----
+ros2 launch robot3l robot_display.launch.py
+
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args --remap cmd_vel:=/cmd_vel
+
+ros2 topic echo /robot/scan
+----- ex02 -----
+
+
+----- ex03 -----
+
+
+----- ex04 -----
+
+
+----- ex05 -----
+
