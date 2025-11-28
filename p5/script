@@ -1,3 +1,4 @@
+---
 ----- ex01 -----
 ros2 launch robot robot_display.launch.py
 
@@ -13,9 +14,9 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args --remap cmd_vel:
 
 ----- ex04 -----
 ros2 launch robot3 robot_display.launch.py
-
 ros2 launch unicmove circle_movement.launch.py
 
 
 ----- ex05 -----
-норм
+ros2 launch robot3 robot_display.launch.py
+ros2 launch unicmove circle_movement.launch.py

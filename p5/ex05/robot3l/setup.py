@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'robot3'
+package_name = 'robot3l'
 
 setup(
     name=package_name,
@@ -13,6 +13,7 @@ setup(
         ('share/' + package_name + '/launch', ['launch/robot_display.launch.py']),
         ('share/' + package_name + '/urdf', ['urdf/robot.xacro']),
         ('share/' + package_name + '/rviz', ['rviz/urdf_config.rviz']),
+        ('share/' + package_name + '/config', ['config/robot_bridge.yaml']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

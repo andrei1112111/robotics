@@ -54,6 +54,3 @@ ros2 run turtlesim turtle_teleop_key
 # ==> Ex03 — Путешествие во времени с помощью tf2 <==
 ros2 launch ex03 time_travel.launch.py delay:=3.0
 ros2 run turtlesim turtle_teleop_key
-
-
-
